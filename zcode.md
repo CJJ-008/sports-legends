@@ -82,7 +82,7 @@
 | 2 | 数据获取与清洗（6 个板块 → JSON） | ✅ 完成（FIFA 覆盖 07–14+18–21，缺 15/16/22/23 年份） |
 | 3 | PyTorch「精神同类」推荐模块 | ✅ 完成（376 人 × 384 维嵌入 + 八大品质） |
 | 4 | 前端网站开发 | ✅ 完成（六页站，已通过截图视觉验收） |
-| 5 | 公网部署 + git 存档推送 | ⏸ 用户决定：先本地预览（http://localhost:8765），部署随时可做 |
+| 5 | 公网部署 + git 存档推送 | ✅ 完成（2026-10-11） |
 
 ### 网站结构（site/，暗夜冠军·史诗风）
 | 页面 | 内容 | 核心技能 |
@@ -134,12 +134,11 @@
 - 中国奥运冠军列表（维基）：zh.wikipedia.org/wiki/中国奥运冠军列表
 - 百大运动员榜：topendsports.com / espn.com
 
-## 十、部署待办（用户就绪后执行）
-1. 用户在 github.com/new 创建空仓库（Public），地址发给助手
-2. `git remote add origin <地址>` → `git push -u origin main`
-3. `git subtree push --prefix=site origin gh-pages`（或用 GitHub Pages 设置指向 /site）
-4. 仓库 Settings → Pages → Branch 选 gh-pages → Save
-5. 公网地址：https://<用户名>.github.io/<仓库名>/
-6. 若大陆访问慢：Cloudflare Pages 连接同一仓库一键镜像（免费）
+## 十、部署记录（2026-10-11 完成）
+- 仓库：https://github.com/CJJ-008/sports-legends （main = 完整项目含脚本与数据管道；gh-pages = site/ 纯静态站点）
+- 公网地址：**https://cjj-008.github.io/sports-legends/**
+- 部署方式：git subtree split --prefix=site 推 gh-pages 分支 + API 开启 Pages
+- 后续更新流程：改完代码 → `git add -A && git commit` → `git push` → `git subtree push --prefix=site origin gh-pages`
+- 若大陆访问慢：Cloudflare Pages 连接同一仓库一键镜像（免费）
 
 本地预览：在 site/ 目录运行 `python -m http.server 8765` → http://localhost:8765
