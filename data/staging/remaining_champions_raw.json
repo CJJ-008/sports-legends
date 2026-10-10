@@ -825,28 +825,6 @@
  ],
  "winter_2002_2018": [
   {
-   "games": "盐湖城2002",
-   "games_no": 19,
-   "city": "美国盐湖城",
-   "athlete": "杨扬",
-   "sport": "短道速滑",
-   "event": "女子500米",
-   "season": "winter",
-   "no": null,
-   "verified": true
-  },
-  {
-   "games": "盐湖城2002",
-   "games_no": 19,
-   "city": "美国盐湖城",
-   "athlete": "杨扬",
-   "sport": "短道速滑",
-   "event": "女子1000米",
-   "season": "winter",
-   "no": null,
-   "verified": true
-  },
-  {
    "games": "都灵2006",
    "games_no": 20,
    "city": "意大利都灵",

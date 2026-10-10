@@ -74,9 +74,10 @@ def parse_a(lines):
             continue
         i, sp = find_sport(comp)
         if i > 0:
-            records.append({"athlete": clean(comp[:i].replace("／", "/")),
+            name = clean(comp[:i].replace("／", "/"))
+            records.append({"athlete": name,
                             "team_members": None, "sport": sp, "event": comp[i + len(sp):]})
-            cur = None
+            cur = name
             continue
         if cur and i < 0:
             records.append({"athlete": cur, "team_members": None, "sport": None, "event": comp})

@@ -109,10 +109,7 @@ def parse_paris(path):
 
 # ---------------- Winter 2002-2018 (sohu narrative) ----------------
 WINTER_KNOWN = [
-    {"games": "盐湖城2002", "games_no": 19, "city": "美国盐湖城", "athlete": "杨扬",
-     "sport": "短道速滑", "event": "女子500米"},
-    {"games": "盐湖城2002", "games_no": 19, "city": "美国盐湖城", "athlete": "杨扬",
-     "sport": "短道速滑", "event": "女子1000米"},
+    # 盐湖城2002 covered by official sport.gov.cn page (第19届冬奥会) — not duplicated here
     {"games": "都灵2006", "games_no": 20, "city": "意大利都灵", "athlete": "韩晓鹏",
      "sport": "自由式滑雪", "event": "男子空中技巧"},
     {"games": "都灵2006", "games_no": 20, "city": "意大利都灵", "athlete": "王濛",
