@@ -2535,7 +2535,9 @@
  {
   "name": "张成龙",
   "gold_medals": 1,
-  "sports": [],
+  "sports": [
+   "体操"
+  ],
   "games": [
    "2012奥运会"
   ],
@@ -4223,7 +4225,9 @@
  {
   "name": "郭伟阳",
   "gold_medals": 1,
-  "sports": [],
+  "sports": [
+   "体操"
+  ],
   "games": [
    "2012奥运会"
   ],

@@ -174,6 +174,10 @@ def main():
                 if medals[j]["athlete"] == m["athlete"] and medals[j]["sport"]:
                     m["sport"] = medals[j]["sport"]
                     break
+        if not m["sport"]:
+            ctx = {( "2012", "男子团体"): "体操", ("2012", "女乒团体"): "乒乓球",
+                    ("2012", "男乒团体"): "乒乓球"}
+            m["sport"] = ctx.get((m["year"], m["event"]))
 
     json.dump(medals, open("data/staging/champions_master.json", "w", encoding="utf-8"),
               ensure_ascii=False, indent=1)

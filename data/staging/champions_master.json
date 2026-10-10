@@ -2459,7 +2459,7 @@
    "张成龙",
    "邹凯"
   ],
-  "sport": null,
+  "sport": "体操",
   "event": "男子团体",
   "date": null,
   "score": null,
@@ -2818,7 +2818,7 @@
    "丁宁",
    "郭跃"
   ],
-  "sport": null,
+  "sport": "乒乓球",
   "event": "女乒团体",
   "date": null,
   "score": null,
@@ -2836,7 +2836,7 @@
    "王皓",
    "张继科"
   ],
-  "sport": null,
+  "sport": "乒乓球",
   "event": "男乒团体",
   "date": null,
   "score": null,
