@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>体育精神专题 · 体育人物与体育精神</title>
+<link rel="stylesheet" href="css/design.css">
+<style>
+  .page { padding-top: calc(var(--nav-h) + 40px); }
+  .theme { display: grid; grid-template-columns: 1.35fr 1fr; gap: clamp(24px, 4vw, 56px);
+    padding: clamp(40px, 7vh, 80px) 0; border-top: 1px solid var(--line); align-items: center; }
+  .theme:nth-child(even) { grid-template-columns: 1fr 1.35fr; }
+  .theme:nth-child(even) .t-body { order: 2; }
+  @media (max-width: 900px) { .theme, .theme:nth-child(even) { grid-template-columns: 1fr; }
+    .theme:nth-child(even) .t-body { order: 0; } }
+  .t-no { font-family: var(--mono); color: var(--gold); font-size: 12px; letter-spacing: 3px; margin-bottom: 14px; }
+  .t-body h2 { font-size: clamp(26px, 3.2vw, 40px); font-weight: 800; letter-spacing: -0.5px; }
+  .t-body .sub { color: var(--accent); font-size: 15px; margin: 8px 0 18px; font-weight: 600; }
+  .t-body p { color: var(--muted); font-size: 14.5px; margin-bottom: 12px; max-width: 62ch; }
+  .t-body .note { color: var(--faint); font-size: 12.5px; font-family: var(--mono); margin-top: 10px; }
+  .t-side { display: flex; flex-direction: column; gap: 14px; }
+  .hero-card { display: flex; align-items: center; gap: 14px; background: var(--surface);
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px;
+    transition: transform 0.3s var(--ease), border-color 0.3s; }
+  .hero-card:hover { transform: translateX(6px); border-color: rgba(230, 62, 49, 0.45); }
+  .hero-card .ph { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex: none;
+    border: 1px solid var(--line-strong); background: var(--surface-2); }
+  .hero-card .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .hero-card .ph .init-card { border-radius: 50%; font-size: 20px; }
+  .hero-card .nm { font-weight: 700; }
+  .hero-card .ds { font-size: 12.5px; color: var(--muted); }
+  .t-side .kw { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lede">HALL 04 · THE SPIRIT</div>
+      <h2>体育精神专题</h2>
+      <p>如果数据是骨架，精神就是血肉。十个主题，串起中国体育与世界体育那些最动人的瞬间。</p>
+    </div>
+    <div id="themes"></div>
+  </div>
+</section>
+<script src="js/components.js"></script>
+<script>
+(async () => {
+  const [themes, photoManifest] = await Promise.all([loadJSON("spirit_themes.json"), loadJSON("photos_manifest.json")]);
+  const box = document.getElementById("themes");
+  themes.forEach((t, i) => {
+    const el = document.createElement("div");
+    el.className = "theme";
+    el.id = t.id;
+    el.innerHTML = `
+      <div class="t-body">
+        <div class="t-no">THEME ${String(i + 1).padStart(2, "0")}</div>
+        <h2>${t.title}</h2>
+        <div class="sub">${t.subtitle}</div>
+        ${t.narrative.map((p) => `<p>${p}</p>`).join("")}
+        <div class="note">${t.gold_count_note || ""}</div>
+      </div>
+      <div class="t-side">
+        ${t.heroes.map(h => {
+          const ph = photoManifest[h] ? photoManifest[h].file : null;
+          return `<a class="hero-card" href="match.html?q=${encodeURIComponent(h)}">
+            <span class="ph">${ph ? `<img src="data/${ph}" alt="${h}" loading="lazy" onerror="this.parentElement.innerHTML='<span class=init-card>${h[0]}</span>'">` : `<span class="init-card">${h[0]}</span>`}</span>
+            <span><span class="nm">${h}</span><br><span class="ds">点击查看精神画像</span></span>
+          </a>`;
+        }).join("")}
+        <div class="kw">${t.keywords.map(k => `<span class="tag gold">${k}</span>`).join("")}</div>
+      </div>`;
+    box.appendChild(el);
+  });
+})();
+</script>
+</body>
+</html>

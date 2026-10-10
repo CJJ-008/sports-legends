@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>体育人物与体育精神 · 交互式数据展陈</title>
+<meta name="description" content="从327枚中国奥运金牌到世界体育传奇，用交互式图表与沉浸式画廊讲述体育人物与体育精神。">
+<link rel="stylesheet" href="css/design.css">
+<style>
+  .hero { min-height: 100dvh; display: flex; flex-direction: column; justify-content: center;
+          padding-top: calc(var(--nav-h) + 18px); position: relative; overflow: hidden; }
+  .hero-photo { position: absolute; inset: 0; height: 64%; object-fit: cover;
+    filter: blur(28px) brightness(0.3) saturate(1.15); transform: scale(1.12); }
+  .hero-tint { position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(11,13,18,0.62), transparent 52%, rgba(11,13,18,0.95)); }
+  .hero-inner { text-align: center; position: relative; z-index: 3; }
+  .hero-badge { display: inline-flex; align-items: center; gap: 8px; padding: 7px 16px;
+    border-radius: 999px; border: 1px solid var(--line-strong); background: rgba(232,230,227,0.05);
+    backdrop-filter: blur(8px); font-size: 12.5px; color: var(--muted); margin-bottom: 22px; }
+  .hero-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  h1.hero-title { font-size: clamp(34px, 6.4vw, 72px); letter-spacing: -1px; line-height: 1.12; font-weight: 900; }
+  h1.hero-title em { font-style: italic; color: var(--accent); padding-bottom: 6px; }
+  .hero-sub { color: var(--muted); max-width: 46ch; margin: 16px auto 30px; font-size: clamp(14px, 1.6vw, 16.5px); }
+  .hero-cta { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero-stats { margin-top: clamp(34px, 6vh, 60px); }
+  .hero .cf-stage { margin-top: clamp(24px, 4vh, 44px); }
+  .cf-meta-line { text-align: center; margin-top: 26px; font-family: var(--mono);
+    font-size: 12px; letter-spacing: 2px; color: var(--faint); }
+  .cf-meta-line b { color: var(--gold); font-weight: 600; }
+  .entries { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-top: 10px; }
+  @media (max-width: 960px) { .entries { grid-template-columns: repeat(2, 1fr); } }
+  .entry { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 22px; display: flex; flex-direction: column; gap: 8px;
+    transition: transform 0.3s var(--ease), border-color 0.3s; }
+  .entry:hover { transform: translateY(-4px); border-color: rgba(230,62,49,0.4); }
+  .entry .no { font-family: var(--mono); font-size: 11px; color: var(--gold); letter-spacing: 2px; }
+  .entry h3 { font-size: 17px; }
+  .entry p { font-size: 13px; color: var(--muted); flex: 1; }
+  .entry .go { font-size: 13px; color: var(--accent); font-weight: 700; }
+  .quote-band { border-top: 1px solid var(--line); margin-top: 70px; }
+</style>
+</head>
+<body>
+<section class="hero">
+  <img class="hero-photo" src="data/photos/许海峰.jpg" alt="" onerror="this.remove()">
+  <div class="hero-tint"></div>
+  <div class="wrap hero-inner">
+    <div class="hero-badge rise" style="--d:0"><span class="dot"></span>327 枚中国奥运金牌 · 32 位世界传奇 · 130 年奥运史诗</div>
+    <h1 class="hero-title rise" style="--d:1">体育人物<br>与<em>体育精神</em></h1>
+    <p class="hero-sub rise" style="--d:2">从 1984 年许海峰的第一声枪响，到基普乔格的「人类没有极限」。拖动封面，遇见那些把不可能变成可能的人。</p>
+    <div class="hero-cta rise" style="--d:3">
+      <a class="btn btn-primary" href="champions.html">走进中国冠军环形画廊 <span class="arr">→</span></a>
+      <a class="btn btn-ghost" href="match.html">寻找你的精神同类</a>
+    </div>
+    <div class="hero-stats rise" style="--d:4">
+      <div class="stat-row">
+        <div class="stat"><b id="st-golds">327</b><span>中国奥运金牌（1984–2024）</span></div>
+        <div class="stat"><b id="st-athletes">344</b><span>奥运冠军人物卡</span></div>
+        <div class="stat"><b id="st-legends">32</b><span>国际体育传奇</span></div>
+        <div class="stat"><b id="st-games">130</b><span>年现代奥运史（1896–2024）</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="cf-stage rise" id="coverflow" style="--d:5"></div>
+  <div class="cf-meta-line" id="cf-meta">LOADING <b>|</b> 00 / 32</div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lede">FIVE HALLS</div>
+      <h2>五个展厅，一种精神</h2>
+      <p>数据与人物在此交汇：用 ECharts 读懂百年奥运格局，用环形画廊触摸每一位中国冠军，用生涯曲线看巨星如何炼成。</p>
+    </div>
+    <div class="entries">
+      <a class="entry rise" style="--d:0" href="olympics.html">
+        <span class="no">HALL 01</span><h3>奥运百年统计厅</h3>
+        <p>奖牌总榜、国家趋势、中国逐届成绩、女子项目演进，130 年格局一目了然。</p>
+        <span class="go">进入展厅 →</span>
+      </a>
+      <a class="entry rise" style="--d:1" href="champions.html">
+        <span class="no">HALL 02</span><h3>中国冠军环形画廊</h3>
+        <p>344 位奥运冠军悬浮于胶片环上，拖拽旋转，正面即选中，看每一块金牌背后的名字。</p>
+        <span class="go">进入展厅 →</span>
+      </a>
+      <a class="entry rise" style="--d:2" href="stars.html">
+        <span class="no">HALL 03</span><h3>巨星曲线厅</h3>
+        <p>梅西与 C 罗的 17 年评分交锋，乔丹与詹姆斯的隔空对话，巨星如何一年年炼成。</p>
+        <span class="go">进入展厅 →</span>
+      </a>
+      <a class="entry rise" style="--d:3" href="spirit.html">
+        <span class="no">HALL 04</span><h3>体育精神专题</h3>
+        <p>女排精神、首金时刻、中国速度、四朝元老……十个主题读懂「精神」二字的分量。</p>
+        <span class="go">进入展厅 →</span>
+      </a>
+      <a class="entry rise" style="--d:4" href="match.html">
+        <span class="no">HALL 05</span><h3>精神同类推荐</h3>
+        <p>选择你欣赏的品质，PyTorch 嵌入模型为你匹配气质最像的体育人物。</p>
+        <span class="go">进入展厅 →</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<script src="js/components.js"></script>
+<script>
+(async () => {
+  try {
+    const legends = await loadJSON("legends.json");
+    const meta = document.getElementById("cf-meta");
+    const cf = new CoverflowStage(document.getElementById("coverflow"), legends, {
+      onSelect: (it) => { location.href = `spirit.html?hero=${encodeURIComponent(it.name)}`; }
+    });
+    cf.onchange = (i, it) => {
+      meta.innerHTML =
+        `${(it.sport || "").toUpperCase()} <b>|</b> ${it.name} <b>|</b> ${String(i + 1).padStart(2, "0")} / ${legends.length}`;
+    };
+    cf.render();
+  } catch (e) { console.error(e); }
+})();
+</script>
+</body>
+</html>

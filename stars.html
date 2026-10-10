@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>巨星曲线厅 · 体育人物与体育精神</title>
+<link rel="stylesheet" href="css/design.css">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  .page { padding-top: calc(var(--nav-h) + 40px); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .chip { padding: 6px 15px; border-radius: 999px; font-size: 13px; cursor: pointer;
+    background: rgba(232,230,227,0.05); border: 1px solid var(--line); color: var(--muted);
+    transition: all 0.25s var(--ease); user-select: none; }
+  .chip:hover { color: var(--text); border-color: var(--line-strong); }
+  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .legend-note { font-size: 12.5px; color: var(--faint); margin-top: 10px; }
+  .pairstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0 6px; }
+  @media (max-width: 760px) { .pairstats { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lede">HALL 03 · CAREER CURVES</div>
+      <h2>巨星曲线厅</h2>
+      <p>巨星的伟大不是一夜之间的。用逐年数据看清：梅西与 C 罗如何互相追逐十七年，乔丹与詹姆斯如何定义两个时代。</p>
+    </div>
+
+    <div class="seg" id="sport-seg">
+      <button data-s="fifa" class="on">足球 · FIFA 评分</button>
+      <button data-s="nba">篮球 · NBA 生涯</button>
+    </div>
+
+    <div class="chart-card" id="fifa-panel">
+      <h3>FIFA 能力值曲线</h3>
+      <div class="sub">游戏评分是球员实力的时代注脚。点击姓名开关，最多同时对比 6 人。</div>
+      <div class="chips" id="fifa-chips"></div>
+      <div class="chart tall" id="c-fifa"></div>
+      <div class="legend-note">数据：SoFIFA 历史评分快照（FIFA 07–21，经去重取中位数）。</div>
+    </div>
+
+    <div class="chart-card" id="nba-panel" style="display:none">
+      <h3>NBA 巨星生涯曲线</h3>
+      <div class="sub">场均得分随赛季的变化，从张伯伦到库里（1950–2017）。</div>
+      <div class="chips" id="nba-chips"></div>
+      <div class="chart tall" id="c-nba"></div>
+      <div class="pairstats" id="nba-stats"></div>
+      <div class="legend-note">数据：Basketball-Reference（via Kaggle「NBA Players stats since 1950」）。</div>
+    </div>
+  </div>
+</section>
+<script src="js/components.js"></script>
+<script>
+const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
+               axisLabel: { color: "#9b9995" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
+const COLORS = ["#e63e31", "#d9a441", "#5b8dd9", "#59a97a", "#c77dba", "#e0803d"];
+const charts = [];
+function mk(id, option) {
+  const c = echarts.init(document.getElementById(id));
+  c.setOption(option); charts.push(c); return c;
+}
+window.addEventListener("resize", () => charts.forEach(c => c.resize()));
+
+(async () => {
+  const [fifa, nba] = await Promise.all([loadJSON("fifa_curves.json"), loadJSON("nba_curves.json")]);
+
+  /* ---- FIFA ---- */
+  const fSel = new Set(["梅西", "C·罗纳尔多", "姆巴佩"].filter(n => fifa.some(p => p.name === n)));
+  const fNames = fifa.map(p => p.name);
+  ["姆巴佩", "哈兰德"].forEach(n => { if (fifa.some(p => p.name === n)) fSel.add(n); });
+  function renderFifa() {
+    const sel = fifa.filter(p => fSel.has(p.name));
+    const allYears = [...new Set(sel.flatMap(p => p.seasons.map(s => s.year)))].sort((a, b) => a - b);
+    mk("c-fifa", {
+      grid: { left: 44, right: 24, top: 36, bottom: 30 },
+      tooltip: { trigger: "axis" },
+      legend: { show: false },
+      xAxis: { type: "category", data: allYears.map(y => "FIFA " + String(y).slice(2)), ...AXIS },
+      yAxis: { type: "value", min: 55, max: 95, ...AXIS },
+      series: sel.map((p, i) => ({
+        name: p.name, type: "line", smooth: true, symbolSize: 6, connectNulls: true,
+        data: allYears.map(y => { const s = p.seasons.find(x => x.year === y); return s ? s.bov : null; }),
+        lineStyle: { width: 3, color: COLORS[i % 6] }, itemStyle: { color: COLORS[i % 6] },
+        label: { show: true, position: "top", color: COLORS[i % 6], fontFamily: "monospace", fontSize: 10, formatter: (x) => x.data[1] },
+      })),
+    });
+  }
+  const fChips = document.getElementById("fifa-chips");
+  fChips.innerHTML = fNames.map(n =>
+    `<span class="chip ${fSel.has(n) ? "on" : ""}" data-n="${n}">${n}</span>`).join("");
+  fChips.addEventListener("click", (e) => {
+    const c = e.target.closest(".chip"); if (!c) return;
+    const n = c.dataset.n;
+    if (fSel.has(n)) fSel.delete(n);
+    else { if (fSel.size >= 6) return; fSel.add(n); }
+    c.classList.toggle("on");
+    renderFifa();
+  });
+  renderFifa();
+
+  /* ---- NBA ---- */
+  const nSel = new Set(["迈克尔·乔丹", "勒布朗·詹姆斯", "科比·布莱恩特"]);
+  const nNames = nba.map(p => p.name);
+  function renderNba() {
+    const sel = nba.filter(p => nSel.has(p.name));
+    mk("c-nba", {
+      grid: { left: 44, right: 24, top: 36, bottom: 30 },
+      tooltip: { trigger: "axis" },
+      legend: { show: false },
+      xAxis: { type: "category", data: sel[0] ? sel[0].seasons.map(s => s.year + "-" + String((s.year + 1) % 100).padStart(2, "0")) : [], ...AXIS },
+      yAxis: { type: "value", ...AXIS },
+      series: sel.map((p, i) => ({
+        name: p.name, type: "line", smooth: true, symbolSize: 5, connectNulls: true,
+        data: p.seasons.map(s => s.ppg),
+        lineStyle: { width: 3, color: COLORS[i % 6] }, itemStyle: { color: COLORS[i % 6] },
+      })),
+    });
+    const st = document.getElementById("nba-stats");
+    st.innerHTML = sel.map(p => {
+      const tot = p.seasons.reduce((a, s) => ({ g: a.g + s.g, pts: a.pts + (s.ppg * s.g) }));
+      const career = tot.g ? (tot.pts / tot.g).toFixed(1) : "-";
+      return `<div class="stat"><b>${career}</b><span>${p.name} · 生涯场均得分（${p.seasons.length} 季）</span></div>`;
+    }).join("");
+  }
+  const nChips = document.getElementById("nba-chips");
+  nChips.innerHTML = nNames.map(n =>
+    `<span class="chip ${nSel.has(n) ? "on" : ""}" data-n="${n}">${n}</span>`).join("");
+  nChips.addEventListener("click", (e) => {
+    const c = e.target.closest(".chip"); if (!c) return;
+    const n = c.dataset.n;
+    if (nSel.has(n)) nSel.delete(n);
+    else { if (nSel.size >= 5) return; nSel.add(n); }
+    c.classList.toggle("on");
+    renderNba();
+  });
+  renderNba();
+
+  document.getElementById("sport-seg").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    document.querySelectorAll("#sport-seg button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    const isFifa = b.dataset.s === "fifa";
+    document.getElementById("fifa-panel").style.display = isFifa ? "" : "none";
+    document.getElementById("nba-panel").style.display = isFifa ? "none" : "";
+    setTimeout(() => charts.forEach(c => c.resize()), 30);
+  });
+})();
+</script>
+</body>
+</html>
