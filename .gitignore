@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Raw datasets (large; only cleaned JSON goes into git)
+data/raw/
+
+# PyTorch / model caches
+models_cache/
+*.pt
+*.bin
+
+# OS / IDE
+Thumbs.db
+.DS_Store
+.idea/
+.vscode/
+*.iml
+
+# Logs
+*.log
