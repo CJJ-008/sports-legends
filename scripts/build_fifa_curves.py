@@ -75,6 +75,37 @@ STARS = {  # dataset short_name -> display info
     "J. Bellingham": ("贝林厄姆", "英格兰", "中场"),
     "Lamine Yamal": ("亚马尔", "西班牙", "前锋"),
     "E. Haaland": ("哈兰德", "挪威", "前锋"),
+    # full-name aliases (older Kaggle dumps use full names)
+    "Lionel Messi": ("梅西", "阿根廷", "前锋"),
+    "Lionel Andrés Messi": ("梅西", "阿根廷", "前锋"),
+    "Kylian Mbappé": ("姆巴佩", "法国", "前锋"),
+    "Kylian Mbappe Lottin": ("姆巴佩", "法国", "前锋"),
+    "Erling Haaland": ("哈兰德", "挪威", "前锋"),
+    "C. Ronaldo dos Santos Aveiro": ("C·罗纳尔多", "葡萄牙", "前锋"),
+    "Cristiano Ronaldo dos Santos Aveiro": ("C·罗纳尔多", "葡萄牙", "葡萄牙"),
+    "Ronaldo de Assis Moreira": ("罗纳尔迪尼奥", "巴西", "前腰"),
+    "Ronaldinho Gaúcho": ("罗纳尔迪尼奥", "巴西", "前腰"),
+    "Robert Lewandowski": ("莱万多夫斯基", "波兰", "前锋"),
+    "Kevin De Bruyne": ("德布劳内", "比利时", "中场"),
+    "Toni Kroos": ("克罗斯", "德国", "中场"),
+    "Luis Suárez": ("苏亚雷斯", "乌拉圭", "前锋"),
+    "Luis Alberto Suárez Díaz": ("苏亚雷斯", "乌拉圭", "前锋"),
+    "Gareth Bale": ("贝尔", "威尔士", "前锋"),
+    "Gareth Frank Bale": ("贝尔", "威尔士", "前锋"),
+    "Wayne Rooney": ("鲁尼", "英格兰", "前锋"),
+    "Wayne Mark Rooney": ("鲁尼", "英格兰", "前锋"),
+    "Didier Drogba": ("德罗巴", "科特迪瓦", "前锋"),
+    "Didier Yves Drogba Tébily": ("德罗巴", "科特迪瓦", "前锋"),
+    "Samuel Eto'o": ("埃托奥", "喀麦隆", "前锋"),
+    "Harry Kane": ("凯恩", "英格兰", "前锋"),
+    "Virgil van Dijk": ("范戴克", "荷兰", "后卫"),
+    "Karim Benzema": ("本泽马", "法国", "前锋"),
+    "Andrea Pirlo": ("皮尔洛", "意大利", "中场"),
+    "Francesco Totti": ("托蒂", "意大利", "前锋"),
+    "Ruud van Nistelrooy": ("范尼斯特鲁伊", "荷兰", "前锋"),
+    "Andrés Iniesta": ("伊涅斯塔", "西班牙", "中场"),
+    "Jude Bellingham": ("贝林厄姆", "英格兰", "中场"),
+    "Cesc Fàbregas": ("法布雷加斯", "西班牙", "中场"),
 }
 
 
@@ -161,6 +192,72 @@ def main():
         info = next(v for v in STARS.values() if v[0] == cn)
         out.append({"name": cn, "nation": info[1], "position": info[2],
                     "seasons": seasons})
+    out.sort(key=lambda x: x["seasons"][0]["year"] if x["seasons"] else 9999)
+
+    # ---------- merge Kaggle-format year files (FIFA 18/19/20/21) ----------
+    try:
+        import pandas as pd
+        import os
+        YEAR_FILES = [
+            ("data/raw/fifa/years/fifa18.csv", 2018, {"name": "Name", "overall": "overall", "age": "age", "club": "club"}),
+            ("data/raw/fifa/years/fifa19.csv", 2019, {"name": "Name", "overall": "overall", "age": "age", "club": "club"}),
+            ("data/raw/fifa/years/fifa21.csv", 2021, {"name": "short_name", "overall": "overall", "age": "age", "club": "club"}),
+            ("data/raw/fifa/years/players_19.csv", 2019, {"name": "short_name", "overall": "overall", "age": "age", "club": "club"}),
+            ("data/raw/fifa/years/players_20.csv", 2020, {"name": "short_name", "overall": "overall", "age": "age", "club": "club"}),
+        ]
+        for path, year, cols in YEAR_FILES:
+            if not os.path.exists(path):
+                continue
+            try:
+                df = pd.read_csv(path, low_memory=False)
+            except Exception:
+                continue
+            def find_col(*cands):
+                lower = {c.lower().strip(): c for c in df.columns}
+                for c in cands:
+                    if c.lower() in lower:
+                        return lower[c.lower()]
+                return None
+            name_col = find_col(cols["name"], "short_name", "Name")
+            overall_col = find_col("overall", "Overall")
+            if not name_col or not overall_col:
+                continue
+            age_col = find_col("age", "Age")
+            club_col = find_col("club", "Club")
+            df[name_col] = df[name_col].astype(str).str.strip()
+            for sn, info in STARS.items():
+                sub = df[df[name_col] == sn]
+                if sub.empty:
+                    continue
+                cn, nation, pos = info
+                bov = int(sub[overall_col].median())
+                age = int(sub[age_col].median()) if age_col else None
+                club = sub[club_col].iloc[0] if club_col else None
+                curves[cn].append({"year": year, "bov": bov, "age": age, "club": str(club)})
+            print(f"merged {os.path.basename(path)} -> {year}")
+    except Exception as e:
+        print("year-file merge skipped:", e)
+
+    # rebuild final output including year-file data
+    out = []
+    pid_name = {}
+    for cn in curves:
+        info = next((v for v in STARS.values() if v[0] == cn), None)
+        if not info:
+            continue
+        seasons = sorted(curves[cn], key=lambda s: s["year"])
+        # dedupe years keeping median bov
+        byyear = {}
+        for s in seasons:
+            byyear.setdefault(s["year"], []).append(s["bov"])
+        seasons = [{"year": y, "bov": round(statistics.median(bs)), "age": None, "club": None}
+                   for y, bs in sorted(byyear.items())]
+        last = None
+        for s in seasons:
+            if s.get("club"):
+                last = s["club"]
+            s["club"] = s.get("club") or last
+        out.append({"name": cn, "nation": info[1], "position": info[2], "seasons": seasons})
     out.sort(key=lambda x: x["seasons"][0]["year"] if x["seasons"] else 9999)
 
     import os

@@ -26,3 +26,6 @@ Thumbs.db
 
 # ZCode session artifacts
 .zcode/
+
+# QA screenshots
+shots/

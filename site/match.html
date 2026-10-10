@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>寻找精神同类 · 体育人物与体育精神</title>
+<link rel="stylesheet" href="css/design.css">
+<style>
+  .page { padding-top: calc(var(--nav-h) + 40px); }
+  .q-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 26px; }
+  @media (max-width: 900px) { .q-grid { grid-template-columns: repeat(2, 1fr); } }
+  .q-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px; cursor: pointer; transition: all 0.25s var(--ease); user-select: none; }
+  .q-card:hover { border-color: var(--line-strong); transform: translateY(-3px); }
+  .q-card.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 24px rgba(230,62,49,0.14); }
+  .q-card .ico { width: 34px; height: 34px; border-radius: 9px; margin-bottom: 10px;
+    display: grid; place-items: center; font-size: 16px; font-weight: 800; color: #fff;
+    background: linear-gradient(140deg, #8f1f18, var(--accent)); }
+  .q-card b { font-size: 15px; display: block; }
+  .q-card span { font-size: 12px; color: var(--muted); line-height: 1.5; display: block; margin-top: 4px; }
+  .result-head { display: flex; justify-content: space-between; align-items: baseline; margin: 26px 0 16px; }
+  .result-head h3 { font-size: 19px; }
+  .result-head .n { font-family: var(--mono); color: var(--gold); font-size: 13px; }
+  .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 900px) { .r-grid { grid-template-columns: 1fr; } }
+  .r-card { display: flex; gap: 16px; background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); padding: 18px; align-items: center; position: relative; overflow: hidden; }
+  .r-card .rank { position: absolute; top: 10px; right: 14px; font-family: var(--mono);
+    color: var(--gold); font-size: 13px; }
+  .r-card .ph { width: 76px; height: 100px; border-radius: var(--radius-sm); overflow: hidden; flex: none;
+    border: 1px solid var(--line-strong); background: var(--surface-2); }
+  .r-card .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .r-card .ph .init-card { font-size: 30px; }
+  .r-card b { font-size: 17px; display: block; }
+  .r-card .kind { font-size: 11.5px; color: var(--accent); font-weight: 700; letter-spacing: 1px; }
+  .r-card p { font-size: 12.5px; color: var(--muted); margin-top: 6px; display: -webkit-box;
+    -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .match-bar { height: 4px; border-radius: 2px; background: rgba(232,230,227,0.08); margin-top: 8px; overflow: hidden; }
+  .match-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
+  .empty { text-align: center; color: var(--faint); padding: 60px 0; font-size: 14px; }
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lede">HALL 05 · SPIRIT MATCH</div>
+      <h2>寻找你的精神同类</h2>
+      <p>勾选 1~3 个你最欣赏的品质，PyTorch 嵌入模型（多语言 MiniLM）会把 376 位体育人物的生涯画像编码成向量，与品质语义实时计算余弦相似度，再叠加六维精神指标，为你找到气质最像的那些人。</p>
+    </div>
+    <div class="q-grid" id="q-grid"></div>
+    <div class="result-head">
+      <h3>你的精神同类</h3><span class="n" id="r-count"></span>
+    </div>
+    <div id="results"><div class="empty">先选择至少一个品质</div></div>
+  </div>
+</section>
+<script src="js/components.js"></script>
+<script>
+(async () => {
+  const data = await loadJSON("spirit_match.json");
+  const qualities = data.qualities;
+  const people = data.people;
+  const ICONS = { persistence: "持", dominance: "巅", teamwork: "团", versatility: "全",
+                  legacy: "史", breakthrough: "破", prodigy: "少", comeback: "归" };
+  const picked = new Set();
+
+  const qg = document.getElementById("q-grid");
+  qg.innerHTML = qualities.map(q => `
+    <div class="q-card" data-id="${q.id}">
+      <span class="ico">${ICONS[q.id] || "✦"}</span>
+      <b>${q.label}</b><span>${q.phrase}</span>
+    </div>`).join("");
+  qg.addEventListener("click", (e) => {
+    const c = e.target.closest(".q-card"); if (!c) return;
+    const id = c.dataset.id;
+    if (picked.has(id)) picked.delete(id);
+    else { if (picked.size >= 3) return; picked.add(id); }
+    c.classList.toggle("on");
+    render();
+  });
+
+  function render() {
+    const box = document.getElementById("results");
+    if (picked.size === 0) {
+      box.innerHTML = `<div class="empty">先选择至少一个品质</div>`;
+      document.getElementById("r-count").textContent = "";
+      return;
+    }
+    const qs = qualities.filter(q => picked.has(idOf(q)));
+    function idOf(q) { return q.id; }
+    // 综合得分 = 0.45×嵌入余弦 + 0.55×维度加权和
+    const scored = people.map(p => {
+      let sim = 0, wsum = 0, dimScore = 0;
+      for (const q of qualities) {
+        if (!picked.has(q.id)) continue;
+        const e1 = p.emb, e2 = q.emb;
+        let dot = 0;
+        for (let i = 0; i < e1.length; i++) dot += e1[i] * e2[i];
+        sim += dot;
+        const w = q.weights;
+        let s = 0;
+        for (const k in w) s += (p.dims[k] || 0) * w[k];
+        dimScore += s / 100;
+        wsum++;
+      }
+      const score = (sim / wsum) * 0.45 + (dimScore / wsum) * 0.55;
+      return { p, score };
+    }).sort((a, b) => b.score - a.score).slice(0, 9);
+
+    const max = scored[0].score || 1;
+    document.getElementById("r-count").textContent = `TOP 9 / ${people.length}`;
+    box.innerHTML = `<div class="r-grid">` + scored.map(({ p, score }, i) => `
+      <div class="r-card">
+        <span class="rank">#${i + 1}</span>
+        <span class="ph">${p.photo ? `<img src="data/${p.photo}" alt="${p.name}" loading="lazy">` : `<span class="init-card">${p.name[0]}</span>`}</span>
+        <div style="flex:1; min-width:0">
+          <span class="kind">${p.kind === "legend" ? "国际传奇" : "中国奥运冠军"} · ${p.sport || ""}</span>
+          <b>${p.name}</b>
+          <p>${(p.profile || "").slice(0, 90)}…</p>
+          <div class="match-bar"><i style="width:${(score / max * 100).toFixed(0)}%"></i></div>
+        </div>
+      </div>`).join("") + `</div>`;
+  }
+})();
+</script>
+</body>
+</html>

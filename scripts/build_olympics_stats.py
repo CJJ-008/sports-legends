@@ -29,6 +29,35 @@ WINTER_CITY = {1924: "Chamonix", 1928: "St. Moritz", 1932: "Lake Placid", 1936: 
                1994: "Lillehammer", 1998: "Nagano", 2002: "Salt Lake City", 2006: "Turin",
                2010: "Vancouver", 2014: "Sochi", 2018: "PyeongChang", 2022: "Beijing"}
 
+# English region -> Chinese display name
+REGION_CN = {
+    "USA": "美国", "Russia": "俄罗斯", "UK": "英国", "China": "中国", "Germany": "德国",
+    "France": "法国", "Italy": "意大利", "Hungary": "匈牙利", "Japan": "日本",
+    "Australia": "澳大利亚", "Sweden": "瑞典", "Romania": "罗马尼亚", "Finland": "芬兰",
+    "Netherlands": "荷兰", "South Korea": "韩国", "Cuba": "古巴", "Canada": "加拿大",
+    "Norway": "挪威", "Austria": "奥地利", "Switzerland": "瑞士", "Poland": "波兰",
+    "Spain": "西班牙", "Brazil": "巴西", "Belgium": "比利时", "Bulgaria": "保加利亚",
+    "Czechoslovakia": "捷克斯洛伐克", "Yugoslavia": "南斯拉夫", "Greece": "希腊",
+    "Denmark": "丹麦", "Ukraine": "乌克兰", "Belarus": "白俄罗斯", "Kenya": "肯尼亚",
+    "Croatia": "克罗地亚", "New Zealand": "新西兰", "Soviet Union": "苏联",
+    "East Germany": "民主德国", "West Germany": "联邦德国", "Unified Team": "独联体",
+    "Czech Republic": "捷克", "Slovakia": "斯洛伐克", "Argentina": "阿根廷",
+    "Mexico": "墨西哥", "Turkey": "土耳其", "Iran": "伊朗", "Jamaica": "牙买加",
+    "South Africa": "南非", "Nigeria": "尼日利亚", "Kazakhstan": "哈萨克斯坦",
+    "Estonia": "爱沙尼亚", "Slovenia": "斯洛文尼亚", "North Korea": "朝鲜",
+    "Ireland": "爱尔兰", "Serbia": "塞尔维亚", "Egypt": "埃及", "Portugal": "葡萄牙",
+    "Colombia": "哥伦比亚", "Chinese Taipei": "中国台北", "Thailand": "泰国",
+    "Ethiopia": "埃塞俄比亚", "Bulgaria": "保加利亚", "Bohemia": "波希米亚",
+    "Australasia": "澳大拉西亚", "Mixed team": "混合队伍", "Chile": "智利",
+    "Republic of Czechoslovakia": "捷克斯洛伐克", "West Indies Federation": "西印度联邦",
+}
+
+
+def cn_region(region: str, noc: str) -> str:
+    if noc == "CHN":
+        return "中国"
+    return REGION_CN.get(region, REGION_CN.get(noc, region))
+
 
 def dump(name, obj):
     with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
@@ -72,7 +101,7 @@ def main():
                 t[c] = 0
         t["total"] = t[["Gold", "Silver", "Bronze"]].sum(axis=1)
         t = t.sort_values(["Gold", "total"], ascending=False).head(20)
-        out = [{"noc": i, "region": nocmap.get(i, i),
+        out = [{"noc": i, "region": cn_region(nocmap.get(i, i), i),
                 "gold": int(row["Gold"]), "silver": int(row["Silver"]),
                 "bronze": int(row["Bronze"]), "total": int(row["total"])}
                for i, row in t.iterrows()]
@@ -83,7 +112,7 @@ def main():
     t = sub.groupby(["year", "noc", "medal"]).size().unstack(fill_value=0)
     rows = []
     for (year, n), row in t.iterrows():
-        rows.append({"year": int(year), "noc": n, "region": nocmap.get(n, n),
+        rows.append({"year": int(year), "noc": n, "region": cn_region(nocmap.get(n, n), n),
                      "gold": int(row.get("Gold", 0)), "silver": int(row.get("Silver", 0)),
                      "bronze": int(row.get("Bronze", 0))})
     dump("summer_medals_by_year.json", rows)
@@ -94,7 +123,7 @@ def main():
     for c in SEL:
         s = sub[(sub["noc"] == c) & (sub["medal"] == "Gold")]
         per = s.groupby("year").size()
-        trend[c] = {"name": nocmap.get(c, c), "years": [int(y) for y in per.index],
+        trend[c] = {"name": cn_region(nocmap.get(c, c), c), "years": [int(y) for y in per.index],
                     "golds": [int(v) for v in per.values]}
     dump("summer_gold_trend.json", trend)
 
@@ -132,11 +161,11 @@ def main():
     ev = r[(r["type"] == "Summer")].copy()
     ev["is_women"] = ev["event"].str.contains("Women", case=False, na=False)
     ev["is_mixed"] = ev["event"].str.contains("Mixed", case=False, na=False)
-    g = ev.groupby("year").agg(events=("event", "nunique"),
-                               women_events=("is_women", lambda s: s[s].nunique()),
-                               mixed_events=("is_mixed", lambda s: s[s].nunique()))
+    g = ev.groupby("year").agg(events=("event", "nunique"))
+    wcount = ev[ev["is_women"]].groupby("year")["event"].nunique()
+    mcount = ev[ev["is_mixed"]].groupby("year")["event"].nunique()
     out = [{"year": int(y), "events": int(row["events"]),
-            "women": int(row["women_events"]), "mixed": int(row["mixed_events"])}
+            "women": int(wcount.get(y, 0)), "mixed": int(mcount.get(y, 0))}
            for y, row in g.iterrows()]
     dump("women_events_evolution.json", out)
 

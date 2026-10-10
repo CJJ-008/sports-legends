@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>奥运百年统计厅 · 体育人物与体育精神</title>
+<link rel="stylesheet" href="css/design.css">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+  .page { padding-top: calc(var(--nav-h) + 40px); }
+</style>
+</head>
+<body>
+<section class="page">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="lede">HALL 01 · 1896–2024</div>
+      <h2>奥运百年统计厅</h2>
+      <p>130 年现代奥运的国家格局与时代变迁。国际数据取自 1896–2022 快照，中国数据以官方「夺金时刻」口径为准（2008 年按夺金时点计 51 金，其中 3 枚后因兴奋剂取消，已在数据中标注）。</p>
+    </div>
+
+    <div class="chart-card">
+      <h3>奥运奖牌总榜</h3>
+      <div class="sub">现代奥运会累计奖牌 Top 15（按金牌数排序）</div>
+      <div class="seg" id="season-seg">
+        <button data-s="summer" class="on">夏季奥运会</button>
+        <button data-s="winter">冬季奥运会</button>
+      </div>
+      <div class="chart tall" id="c-tally"></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>中国逐届奥运金牌</h3>
+        <div class="sub">1984 洛杉矶首金 → 2024 巴黎 40 金（官方夺金口径）</div>
+        <div class="chart" id="c-china"></div>
+      </div>
+      <div class="chart-card">
+        <h3>中美金牌对决</h3>
+        <div class="sub">夏季奥运会逐届金牌数对比</div>
+        <div class="chart" id="c-h2h"></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>体育强国金牌趋势</h3>
+      <div class="sub">夏季奥运会逐届金牌数，点击图例可开关国家</div>
+      <div class="chart tall" id="c-trend"></div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h3>中国金牌项目分布</h3>
+        <div class="sub">327 枚金牌都来自哪些项目</div>
+        <div class="chart" id="c-sport"></div>
+      </div>
+      <div class="chart-card">
+        <h3>女子项目的百年长路</h3>
+        <div class="sub">夏季奥运会女子小项数量演进（1900–2020）</div>
+        <div class="chart" id="c-women"></div>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <h3>参赛规模的膨胀</h3>
+      <div class="sub">夏季奥运会参赛运动员人数（1896–2020）</div>
+      <div class="chart" id="c-scale"></div>
+    </div>
+  </div>
+</section>
+<script src="js/components.js"></script>
+<script>
+const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
+               axisLabel: { color: "#9b9995" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
+const GOLD_BAR = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+  { offset: 0, color: "#8f1f18" }, { offset: 1, color: "#e63e31" }]);
+const charts = [];
+function mk(id, option) {
+  const c = echarts.init(document.getElementById(id));
+  c.setOption(option); charts.push(c); return c;
+}
+window.addEventListener("resize", () => charts.forEach(c => c.resize()));
+
+(async () => {
+  const [tallyS, tallyW, china, h2h, trend, sport, women, scale] = await Promise.all([
+    loadJSON("medal_tally_summer.json"), loadJSON("medal_tally_winter.json"),
+    loadJSON("china_by_games.json"), loadJSON("china_usa_gold.json"),
+    loadJSON("summer_gold_trend.json"), loadJSON("china_gold_by_sport.json"),
+    loadJSON("women_events_evolution.json"), loadJSON("athletes_per_games.json")]);
+
+  /* 奖牌总榜 */
+  function tallyOpt(list) {
+    const names = list.map(x => x.region).reverse();
+    return {
+      grid: { left: 90, right: 40, top: 10, bottom: 30 },
+      tooltip: { trigger: "axis", axisPointer: { type: "shadow" } },
+      legend: { textStyle: { color: "#9b9995" }, top: 0, right: 10 },
+      xAxis: { type: "value", ...AXIS },
+      yAxis: { type: "category", data: names, ...AXIS, splitLine: { show: false } },
+      series: [
+        { name: "金牌", type: "bar", stack: "m", data: list.map(x => x.gold).reverse(), itemStyle: { color: GOLD_BAR }, barMaxWidth: 18 },
+        { name: "银牌", type: "bar", stack: "m", data: list.map(x => x.silver).reverse(), itemStyle: { color: "#8b8d96" }, barMaxWidth: 18 },
+        { name: "铜牌", type: "bar", stack: "m", data: list.map(x => x.bronze).reverse(), itemStyle: { color: "#6b4a32" }, barMaxWidth: 18 },
+      ],
+    };
+  }
+  const tallyC = mk("c-tally", tallyOpt(tallyS));
+  document.getElementById("season-seg").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    document.querySelectorAll("#season-seg button").forEach(x => x.classList.remove("on"));
+    b.classList.add("on");
+    tallyC.setOption(tallyOpt(b.dataset.s === "summer" ? tallyS : tallyW), true);
+  });
+
+  /* 中国逐届 */
+  const cs = china.filter(x => x.season === "summer");
+  const cw = china.filter(x => x.season === "winter");
+  mk("c-china", {
+    grid: { left: 44, right: 20, top: 30, bottom: 30 },
+    tooltip: { trigger: "axis" },
+    legend: { textStyle: { color: "#9b9995" }, top: 0 },
+    xAxis: { type: "category", data: cs.map(x => x.year), ...AXIS },
+    yAxis: { type: "value", ...AXIS },
+    series: [
+      { name: "夏季奥运会", type: "bar", data: cs.map(x => x.gold), itemStyle: { color: GOLD_BAR }, barMaxWidth: 22,
+        label: { show: true, position: "top", color: "#d9a441", fontFamily: "monospace", fontSize: 11 } },
+      { name: "冬季奥运会", type: "line", data: cw.map(x => [x.year, x.gold]), itemStyle: { color: "#d9a441" },
+        lineStyle: { color: "#d9a441", width: 2.5 }, symbolSize: 7, smooth: true },
+    ],
+  });
+
+  /* 中美对决 */
+  const years = [...new Set([...Object.keys(h2h.CHN), ...Object.keys(h2h.USA)])].map(Number).sort((a, b) => a - b);
+  mk("c-h2h", {
+    grid: { left: 44, right: 20, top: 30, bottom: 30 },
+    tooltip: { trigger: "axis" },
+    legend: { textStyle: { color: "#9b9995" }, top: 0 },
+    xAxis: { type: "category", data: years, ...AXIS },
+    yAxis: { type: "value", ...AXIS },
+    series: [
+      { name: "中国", type: "line", data: years.map(y => h2h.CHN[y] ?? null), smooth: true,
+        lineStyle: { color: "#e63e31", width: 3 }, itemStyle: { color: "#e63e31" }, symbolSize: 7,
+        areaStyle: { color: "rgba(230,62,49,0.12)" } },
+      { name: "美国", type: "line", data: years.map(y => h2h.USA[y] ?? null), smooth: true,
+        lineStyle: { color: "#8b8d96", width: 2, type: "dashed" }, itemStyle: { color: "#8b8d96" }, symbolSize: 6 },
+    ],
+  });
+
+  /* 强国趋势 */
+  const SEL = ["CHN", "USA", "URS", "GER", "GBR", "FRA", "JPN", "KOR"];
+  const tYears = [...new Set(SEL.flatMap(c => trend[c].years))].sort((a, b) => a - b);
+  mk("c-trend", {
+    grid: { left: 44, right: 30, top: 40, bottom: 30 },
+    tooltip: { trigger: "axis" },
+    legend: { textStyle: { color: "#9b9995" }, top: 0 },
+    xAxis: { type: "category", data: tYears, ...AXIS },
+    yAxis: { type: "value", ...AXIS },
+    series: SEL.map((c, i) => ({
+      name: trend[c].name, type: "line", smooth: true, symbolSize: 5,
+      data: tYears.map(y => trend[c].years.includes(y) ? trend[c].golds[trend[c].years.indexOf(y)] : null),
+      lineStyle: { width: c === "CHN" ? 3.5 : 1.8, color: c === "CHN" ? "#e63e31" : undefined },
+      itemStyle: { color: c === "CHN" ? "#e63e31" : undefined },
+    })),
+  });
+
+  /* 项目分布 */
+  const sp = sport.filter(x => x.season === "summer").slice(0, 12);
+  mk("c-sport", {
+    grid: { left: 90, right: 40, top: 10, bottom: 30 },
+    tooltip: {},
+    xAxis: { type: "value", ...AXIS },
+    yAxis: { type: "category", data: sp.map(x => x.discipline).reverse(), ...AXIS, splitLine: { show: false } },
+    series: [{ type: "bar", data: sp.map(x => x.gold).reverse(), itemStyle: { color: GOLD_BAR }, barMaxWidth: 16,
+      label: { show: true, position: "right", color: "#d9a441", fontFamily: "monospace" } }],
+  });
+
+  /* 女子演进 */
+  mk("c-women", {
+    grid: { left: 44, right: 20, top: 30, bottom: 30 },
+    tooltip: { trigger: "axis" },
+    legend: { textStyle: { color: "#9b9995" }, top: 0 },
+    xAxis: { type: "category", data: women.map(x => x.year), ...AXIS },
+    yAxis: { type: "value", ...AXIS },
+    series: [
+      { name: "全部小项", type: "line", data: women.map(x => x.events), smooth: true,
+        lineStyle: { color: "#8b8d96" }, itemStyle: { color: "#8b8d96" }, symbolSize: 4 },
+      { name: "女子小项", type: "line", data: women.map(x => x.women), smooth: true,
+        lineStyle: { color: "#e63e31", width: 3 }, itemStyle: { color: "#e63e31" }, symbolSize: 6,
+        areaStyle: { color: "rgba(230,62,49,0.15)" } },
+    ],
+  });
+
+  /* 参赛规模 */
+  mk("c-scale", {
+    grid: { left: 60, right: 20, top: 20, bottom: 30 },
+    tooltip: { trigger: "axis" },
+    xAxis: { type: "category", data: scale.map(x => x.year), ...AXIS },
+    yAxis: { type: "value", ...AXIS },
+    series: [{ type: "line", data: scale.map(x => x.athletes), smooth: true, symbolSize: 5,
+      lineStyle: { color: "#d9a441", width: 2.5 }, itemStyle: { color: "#d9a441" },
+      areaStyle: { color: "rgba(217,164,65,0.10)" } }],
+  });
+})();
+</script>
+</body>
+</html>
