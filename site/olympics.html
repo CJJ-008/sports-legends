@@ -74,8 +74,8 @@
 <script>
 const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
                axisLabel: { color: "#9b9995", fontFamily: "Kanit" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
-const GOLD_BAR = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
-  { offset: 0, color: "#8f1f18" }, { offset: 1, color: "#e63e31" }]);
+const MEDAL_GOLD = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
+  { offset: 0, color: "#c89035" }, { offset: 1, color: "#f2cd6e" }]);
 const charts = [];
 function mk(id, option) {
   const c = echarts.init(document.getElementById(id));
@@ -100,7 +100,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
       xAxis: { type: "value", ...AXIS },
       yAxis: { type: "category", data: names, ...AXIS, splitLine: { show: false } },
       series: [
-        { name: "金牌", type: "bar", stack: "m", data: list.map(x => x.gold).reverse(), itemStyle: { color: GOLD_BAR }, barMaxWidth: 18 },
+        { name: "金牌", type: "bar", stack: "m", data: list.map(x => x.gold).reverse(), itemStyle: { color: MEDAL_GOLD }, barMaxWidth: 18 },
         { name: "银牌", type: "bar", stack: "m", data: list.map(x => x.silver).reverse(), itemStyle: { color: "#8b8d96" }, barMaxWidth: 18 },
         { name: "铜牌", type: "bar", stack: "m", data: list.map(x => x.bronze).reverse(), itemStyle: { color: "#6b4a32" }, barMaxWidth: 18 },
       ],
@@ -124,7 +124,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
     xAxis: { type: "category", data: cs.map(x => x.year), ...AXIS },
     yAxis: { type: "value", ...AXIS },
     series: [
-      { name: "夏季奥运会", type: "bar", data: cs.map(x => x.gold), itemStyle: { color: GOLD_BAR }, barMaxWidth: 22,
+      { name: "夏季奥运会", type: "bar", data: cs.map(x => x.gold), itemStyle: { color: MEDAL_GOLD }, barMaxWidth: 22,
         label: { show: true, position: "top", color: "#d9a441", fontFamily: "Kanit", fontSize: 11 } },
       { name: "冬季奥运会", type: "line", data: cw.map(x => [x.year, x.gold]), itemStyle: { color: "#d9a441" },
         lineStyle: { color: "#d9a441", width: 2.5 }, symbolSize: 7, smooth: true },
@@ -172,7 +172,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
     tooltip: {},
     xAxis: { type: "value", ...AXIS },
     yAxis: { type: "category", data: sp.map(x => x.discipline).reverse(), ...AXIS, splitLine: { show: false } },
-    series: [{ type: "bar", data: sp.map(x => x.gold).reverse(), itemStyle: { color: GOLD_BAR }, barMaxWidth: 16,
+    series: [{ type: "bar", data: sp.map(x => x.gold).reverse(), itemStyle: { color: MEDAL_GOLD }, barMaxWidth: 16,
       label: { show: true, position: "right", color: "#d9a441", fontFamily: "Kanit" } }],
   });
 
