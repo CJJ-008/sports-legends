@@ -11,7 +11,27 @@ const NAV_ITEMS = [
   { href: "match.html", label: "精神同类" },
 ];
 
+const ACCENTS = [
+  ["purple", "幻紫"], ["blue", "钴蓝"], ["green", "翡翠"], ["orange", "暖橙"], ["red", "绯红"],
+];
+
+/* 滚动入场：.rise 进视口才播（IO 驱动）。先给 html 加 js-reveal，
+   样式里只有 js-reveal 下才隐藏待入场元素——JS 失效时内容直接可见 */
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+const revealIO = new IntersectionObserver((entries) => {
+  entries.forEach((en) => {
+    if (en.isIntersecting) { en.target.classList.add("is-in"); revealIO.unobserve(en.target); }
+  });
+}, { threshold: 0.12, rootMargin: "0px 0px -7% 0px" });
+
+function bindReveals(root = document) {
+  const els = root.querySelectorAll(".rise:not(.is-in)");
+  if (reduceMotion.matches) { els.forEach((el) => el.classList.add("is-in")); return; }
+  els.forEach((el) => revealIO.observe(el));
+}
+
 function initChrome() {
+  document.documentElement.classList.add("js-reveal");
   const nav = document.createElement("header");
   nav.className = "topnav";
   const here = location.pathname.split("/").pop() || "index.html";
@@ -20,19 +40,45 @@ function initChrome() {
       <span class="brand-mark">体</span>
       <span>体育人物与体育精神<small>SPORTS LEGENDS</small></span>
     </a>
-    <nav class="navlinks">
-      ${NAV_ITEMS.map((n) => `<a href="${n.href}" class="${n.href === here ? "on" : ""}">${n.label}</a>`).join("")}
-    </nav>`;
+    <div class="nav-side">
+      <nav class="navlinks">
+        ${NAV_ITEMS.map((n) => `<a href="${n.href}" class="${n.href === here ? "on" : ""}">${n.label}</a>`).join("")}
+      </nav>
+      <div class="theme-dots" role="group" aria-label="切换主题色">
+        ${ACCENTS.map(([k, n]) => `<button class="t-dot" data-accent="${k}" title="${n}" aria-label="主题色：${n}" aria-pressed="false"></button>`).join("")}
+      </div>
+    </div>`;
   document.body.prepend(nav);
-  const layers = document.createElement("div");
-  layers.innerHTML = `<div class="page-glow"></div><div class="vignette"></div><div class="grain"></div>`;
-  document.body.append(...layers.children);
+
+  /* 主题色切换：换一组强调色 token，选择存 localStorage（"red" 即默认，不写属性） */
+  const rootEl = document.documentElement;
+  const dotsEl = nav.querySelector(".theme-dots");
+  const syncDots = () => {
+    const cur = rootEl.dataset.accent || "purple";
+    dotsEl.querySelectorAll(".t-dot").forEach((d) =>
+      d.setAttribute("aria-pressed", String(d.dataset.accent === cur)));
+  };
+  dotsEl.addEventListener("click", (e) => {
+    const b = e.target.closest(".t-dot"); if (!b) return;
+    try {
+      if (b.dataset.accent === "purple") { delete rootEl.dataset.accent; localStorage.removeItem("site-accent"); }
+      else { rootEl.dataset.accent = b.dataset.accent; localStorage.setItem("site-accent", b.dataset.accent); }
+    } catch (err) { rootEl.dataset.accent = b.dataset.accent === "purple" ? "" : b.dataset.accent; }
+    syncDots();
+  });
+  try {
+    const saved = localStorage.getItem("site-accent");
+    if (saved && saved !== "red") rootEl.dataset.accent = saved;
+  } catch (err) { /* localStorage 不可用时保持默认 */ }
+  syncDots();
+
+  bindReveals();
 
   const foot = document.createElement("footer");
   foot.className = "footer";
   foot.innerHTML = `<div class="wrap">
     <div>体育人物与体育精神 · 交互式数据展陈<br>数据来源：国家体育总局、KeithGalli/Olympics-Dataset、Kaggle、百度百科图片搜索（学习交流用途）</div>
-    <div><a href="index.html">首页</a> · <a href="https://github.com/" target="_blank" rel="noopener">GitHub 仓库</a></div>
+    <div><a href="index.html">首页</a> · <a href="https://github.com/CJJ-008/sports-legends" target="_blank" rel="noopener">GitHub 仓库</a></div>
   </div>`;
   document.body.append(foot);
 }
@@ -41,6 +87,15 @@ async function loadJSON(name) {
   const r = await fetch(`data/${name}`);
   if (!r.ok) throw new Error(`load ${name}: ${r.status}`);
   return r.json();
+}
+
+/* 数据加载失败时的统一提示（各页面在 catch 中调用） */
+function showLoadError() {
+  if (document.querySelector(".load-fail")) return;
+  const d = document.createElement("div");
+  d.className = "load-fail";
+  d.textContent = "数据加载失败，请检查网络后刷新重试。";
+  document.querySelector(".wrap")?.prepend(d);
 }
 
 /* 照片缺失时返回首字母渐变卡的 DOM */

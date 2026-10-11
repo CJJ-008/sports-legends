@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0C0C0C">
 <title>奥运百年统计厅 · 体育人物与体育精神</title>
+<script>try{var a=localStorage.getItem("site-accent");if(a&&a!=="red")document.documentElement.dataset.accent=a}catch(e){}</script>
 <link rel="stylesheet" href="css/design.css">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
@@ -14,9 +16,9 @@
 <section class="page">
   <div class="wrap">
     <div class="sec-head">
-      <div class="lede">HALL 01 · 1896–2024</div>
+      <div class="lede">HALL 01 · 1896-2024</div>
       <h2>奥运百年统计厅</h2>
-      <p>130 年现代奥运的国家格局与时代变迁。国际数据取自 1896–2022 快照，中国数据以官方「夺金时刻」口径为准（2008 年按夺金时点计 51 金，其中 3 枚后因兴奋剂取消，已在数据中标注）。</p>
+      <p>130 年现代奥运的国家格局与时代变迁。国际数据取自 1896-2022 快照，中国数据以官方「夺金时刻」口径为准（2008 年按夺金时点计 51 金，其中 3 枚后因兴奋剂取消，已在数据中标注）。</p>
     </div>
 
     <div class="chart-card">
@@ -56,14 +58,14 @@
       </div>
       <div class="chart-card">
         <h3>女子项目的百年长路</h3>
-        <div class="sub">夏季奥运会女子小项数量演进（1900–2020）</div>
+        <div class="sub">夏季奥运会女子小项数量演进（1900-2020）</div>
         <div class="chart" id="c-women"></div>
       </div>
     </div>
 
     <div class="chart-card">
       <h3>参赛规模的膨胀</h3>
-      <div class="sub">夏季奥运会参赛运动员人数（1896–2020）</div>
+      <div class="sub">夏季奥运会参赛运动员人数（1896-2020）</div>
       <div class="chart" id="c-scale"></div>
     </div>
   </div>
@@ -71,7 +73,7 @@
 <script src="js/components.js"></script>
 <script>
 const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
-               axisLabel: { color: "#9b9995" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
+               axisLabel: { color: "#9b9995", fontFamily: "Kanit" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
 const GOLD_BAR = new echarts.graphic.LinearGradient(0, 0, 1, 0, [
   { offset: 0, color: "#8f1f18" }, { offset: 1, color: "#e63e31" }]);
 const charts = [];
@@ -123,7 +125,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
     yAxis: { type: "value", ...AXIS },
     series: [
       { name: "夏季奥运会", type: "bar", data: cs.map(x => x.gold), itemStyle: { color: GOLD_BAR }, barMaxWidth: 22,
-        label: { show: true, position: "top", color: "#d9a441", fontFamily: "monospace", fontSize: 11 } },
+        label: { show: true, position: "top", color: "#d9a441", fontFamily: "Kanit", fontSize: 11 } },
       { name: "冬季奥运会", type: "line", data: cw.map(x => [x.year, x.gold]), itemStyle: { color: "#d9a441" },
         lineStyle: { color: "#d9a441", width: 2.5 }, symbolSize: 7, smooth: true },
     ],
@@ -171,7 +173,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
     xAxis: { type: "value", ...AXIS },
     yAxis: { type: "category", data: sp.map(x => x.discipline).reverse(), ...AXIS, splitLine: { show: false } },
     series: [{ type: "bar", data: sp.map(x => x.gold).reverse(), itemStyle: { color: GOLD_BAR }, barMaxWidth: 16,
-      label: { show: true, position: "right", color: "#d9a441", fontFamily: "monospace" } }],
+      label: { show: true, position: "right", color: "#d9a441", fontFamily: "Kanit" } }],
   });
 
   /* 女子演进 */
@@ -200,7 +202,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
       lineStyle: { color: "#d9a441", width: 2.5 }, itemStyle: { color: "#d9a441" },
       areaStyle: { color: "rgba(217,164,65,0.10)" } }],
   });
-})();
+})().catch(() => showLoadError());
 </script>
 </body>
 </html>

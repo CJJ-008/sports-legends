@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0C0C0C">
 <title>巨星曲线厅 · 体育人物与体育精神</title>
+<script>try{var a=localStorage.getItem("site-accent");if(a&&a!=="red")document.documentElement.dataset.accent=a}catch(e){}</script>
 <link rel="stylesheet" href="css/design.css">
 <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
 <style>
@@ -13,7 +15,7 @@
     background: rgba(232,230,227,0.05); border: 1px solid var(--line); color: var(--muted);
     transition: all 0.25s var(--ease); user-select: none; }
   .chip:hover { color: var(--text); border-color: var(--line-strong); }
-  .chip.on { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .chip.on { background: var(--accent-strong); color: #fff; border-color: var(--accent); font-weight: 700; }
   .legend-note { font-size: 12.5px; color: var(--faint); margin-top: 10px; }
   .pairstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0 6px; }
   @media (max-width: 760px) { .pairstats { grid-template-columns: 1fr; } }
@@ -38,12 +40,12 @@
       <div class="sub">游戏评分是球员实力的时代注脚。点击姓名开关，最多同时对比 6 人。</div>
       <div class="chips" id="fifa-chips"></div>
       <div class="chart tall" id="c-fifa"></div>
-      <div class="legend-note">数据：SoFIFA 历史评分快照（FIFA 07–21，经去重取中位数）。</div>
+      <div class="legend-note">数据：SoFIFA 历史评分快照（FIFA 07-21，经去重取中位数）。</div>
     </div>
 
     <div class="chart-card" id="nba-panel" style="display:none">
       <h3>NBA 巨星生涯曲线</h3>
-      <div class="sub">场均得分随赛季的变化，从张伯伦到库里（1950–2017）。</div>
+      <div class="sub">场均得分随赛季的变化，从张伯伦到库里（1950-2017）。</div>
       <div class="chips" id="nba-chips"></div>
       <div class="chart tall" id="c-nba"></div>
       <div class="pairstats" id="nba-stats"></div>
@@ -54,7 +56,7 @@
 <script src="js/components.js"></script>
 <script>
 const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
-               axisLabel: { color: "#9b9995" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
+               axisLabel: { color: "#9b9995", fontFamily: "Kanit" }, splitLine: { lineStyle: { color: "rgba(232,230,227,0.07)" } } };
 const COLORS = ["#e63e31", "#d9a441", "#5b8dd9", "#59a97a", "#c77dba", "#e0803d"];
 const charts = [];
 function mk(id, option) {
@@ -100,7 +102,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
         name: p.name, type: "line", smooth: true, symbolSize: 6, connectNulls: true,
         data: allYears.map(y => { const s = p.seasons.find(x => x.year === y); return s ? s.bov : null; }),
         lineStyle: { width: 3, color: COLORS[i % 6] }, itemStyle: { color: COLORS[i % 6] },
-        label: { show: true, position: "top", color: COLORS[i % 6], fontFamily: "monospace", fontSize: 10, formatter: (x) => x.dataIndex === lastYear ? "" : x.data[1] },
+        label: { show: true, position: "top", color: COLORS[i % 6], fontFamily: "Kanit", fontSize: 10, formatter: (x) => x.dataIndex === lastYear ? "" : x.data[1] },
         endLabel: { show: true, formatter: "{a}", color: COLORS[i % 6], fontSize: 12.5, fontWeight: 700, offset: [6, dy[i]] },
       })),
     });
@@ -180,7 +182,7 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
     document.getElementById("nba-panel").style.display = isFifa ? "none" : "";
     setTimeout(() => charts.forEach(c => c.resize()), 30);
   });
-})();
+})().catch(() => showLoadError());
 </script>
 </body>
 </html>
