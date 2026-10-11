@@ -3,19 +3,21 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0C0C0C">
 <title>寻找精神同类 · 体育人物与体育精神</title>
+<script>try{var a=localStorage.getItem("site-accent");if(a&&a!=="red")document.documentElement.dataset.accent=a}catch(e){}</script>
 <link rel="stylesheet" href="css/design.css">
 <style>
   .page { padding-top: calc(var(--nav-h) + 40px); }
   .q-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 26px; }
   @media (max-width: 900px) { .q-grid { grid-template-columns: repeat(2, 1fr); } }
-  .q-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  .q-card { background: var(--surface); border: 1.5px solid var(--card-line); border-radius: var(--radius);
     padding: 18px; cursor: pointer; transition: all 0.25s var(--ease); user-select: none; }
-  .q-card:hover { border-color: var(--line-strong); transform: translateY(-3px); }
-  .q-card.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 24px rgba(230,62,49,0.14); }
+  .q-card:hover { border-color: rgba(215, 226, 234, 0.55); transform: translateY(-3px); }
+  .q-card.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 24px rgba(var(--accent-rgb),0.14); }
   .q-card .ico { width: 34px; height: 34px; border-radius: 9px; margin-bottom: 10px;
     display: grid; place-items: center; font-size: 16px; font-weight: 800; color: #fff;
-    background: linear-gradient(140deg, #8f1f18, var(--accent)); }
+    background: linear-gradient(140deg, var(--accent-deep), var(--accent)); }
   .q-card b { font-size: 15px; display: block; }
   .q-card span { font-size: 12px; color: var(--muted); line-height: 1.5; display: block; margin-top: 4px; }
   .result-head { display: flex; justify-content: space-between; align-items: baseline; margin: 26px 0 16px; }
@@ -23,7 +25,7 @@
   .result-head .n { font-family: var(--mono); color: var(--gold); font-size: 13px; }
   .r-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
   @media (max-width: 900px) { .r-grid { grid-template-columns: 1fr; } }
-  .r-card { display: flex; gap: 16px; background: var(--surface); border: 1px solid var(--line);
+  .r-card { display: flex; gap: 16px; background: var(--surface); border: 1.5px solid var(--card-line);
     border-radius: var(--radius); padding: 18px; align-items: center; position: relative; overflow: hidden; }
   .r-card .rank { position: absolute; top: 10px; right: 14px; font-family: var(--mono);
     color: var(--gold); font-size: 13px; }
@@ -38,6 +40,16 @@
   .match-bar { height: 4px; border-radius: 2px; background: rgba(232,230,227,0.08); margin-top: 8px; overflow: hidden; }
   .match-bar i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--gold)); }
   .empty { text-align: center; color: var(--faint); padding: 60px 0; font-size: 14px; }
+  .focus-panel { display: flex; gap: 16px; background: var(--surface); border: 1.5px solid var(--card-line);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 26px; align-items: flex-start; }
+  .focus-panel .ph { width: 76px; height: 100px; border-radius: var(--radius-sm); overflow: hidden; flex: none;
+    border: 1px solid var(--line-strong); background: var(--surface-2); }
+  .focus-panel .ph img { width: 100%; height: 100%; object-fit: cover; }
+  .focus-panel .ph .init-card { font-size: 30px; }
+  .focus-panel .kind { font-size: 11.5px; color: var(--accent); font-weight: 700; letter-spacing: 1px; }
+  .focus-panel b { font-size: 19px; display: block; margin: 2px 0 6px; }
+  .focus-panel p { font-size: 13px; color: var(--muted); max-width: 70ch; }
+  .focus-panel .kw { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 </style>
 </head>
 <body>
@@ -48,6 +60,7 @@
       <h2>寻找你的精神同类</h2>
       <p>勾选 1~3 个你最欣赏的品质，PyTorch 嵌入模型（多语言 MiniLM）会把 376 位体育人物的生涯画像编码成向量，与品质语义实时计算余弦相似度，再叠加六维精神指标，为你找到气质最像的那些人。</p>
     </div>
+    <div id="focus"></div>
     <div class="q-grid" id="q-grid"></div>
     <div class="result-head">
       <h3>你的精神同类</h3><span class="n" id="r-count"></span>
@@ -64,6 +77,29 @@
   const ICONS = { persistence: "持", dominance: "巅", teamwork: "团", versatility: "全",
                   legacy: "史", breakthrough: "破", prodigy: "少", comeback: "归" };
   const picked = new Set();
+
+  /* 专题页人物卡深链：match.html?q=人名 → 展示 TA 的精神画像 */
+  const qName = new URLSearchParams(location.search).get("q");
+  if (qName) {
+    const fp = people.find((x) => x.name === qName);
+    if (fp) {
+      const dimTags = qualities
+        .map((q) => ({ label: q.label, v: fp.dims[q.id] || 0 }))
+        .sort((a, b) => b.v - a.v).slice(0, 4)
+        .map((d) => `<span class="tag gold">${d.label} ${d.v}</span>`).join("");
+      document.getElementById("focus").innerHTML = `
+        <div class="focus-panel">
+          <span class="ph">${fp.photo ? `<img src="data/${fp.photo}" alt="${fp.name}">` : `<span class="init-card">${fp.name[0]}</span>`}</span>
+          <div style="flex:1; min-width:0">
+            <span class="kind">${fp.kind === "legend" ? "国际传奇" : "中国奥运冠军"} · ${fp.sport || ""}</span>
+            <b>${fp.name}</b>
+            <p>${fp.profile || ""}</p>
+            <div class="kw">${dimTags}</div>
+            ${fp.kind === "legend" ? `<div style="margin-top:12px"><a class="btn btn-ghost" href="star.html?name=${encodeURIComponent(fp.name)}" style="padding:9px 18px; font-size:13px">查看完整介绍 <span class="arr">→</span></a></div>` : ""}
+          </div>
+        </div>`;
+    }
+  }
 
   const qg = document.getElementById("q-grid");
   qg.innerHTML = qualities.map(q => `
@@ -122,7 +158,7 @@
         </div>
       </div>`).join("") + `</div>`;
   }
-})();
+})().catch(() => showLoadError());
 </script>
 </body>
 </html>

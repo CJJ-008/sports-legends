@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0C0C0C">
 <title>中国冠军环形画廊 · 体育人物与体育精神</title>
+<script>try{var a=localStorage.getItem("site-accent");if(a&&a!=="red")document.documentElement.dataset.accent=a}catch(e){}</script>
 <link rel="stylesheet" href="css/design.css">
 <style>
   .page { padding-top: calc(var(--nav-h) + 40px); }
@@ -24,7 +26,7 @@
   .hall-strip { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 26px; }
   .hall-strip .tag { cursor: pointer; transition: all .25s var(--ease); }
   .hall-strip .tag:hover { border-color: var(--accent); color: #fff; }
-  .hall-strip .tag.on { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .hall-strip .tag.on { background: var(--accent-strong); color: #fff; border-color: var(--accent-strong); }
   .hint { text-align: center; color: var(--faint); font-size: 12.5px; margin-top: 14px; font-family: var(--mono); letter-spacing: 1.5px; }
 </style>
 </head>
@@ -55,7 +57,7 @@
         <div class="detail-top">
           <div class="detail-photo" id="d-photo"></div>
           <div>
-            <h3 id="d-name">—</h3>
+            <h3 id="d-name">加载中</h3>
             <div class="badge-row" id="d-tags"></div>
           </div>
         </div>
@@ -83,7 +85,7 @@
     "冬季": athletes.filter(a => a.games.some(g => ["2002","2006","2010","2014","2018","2022"].includes(g))).map(a => ({ name: a.name, photo: photoOf(a.name) })),
     "1984": athletes.filter(a => a.games.includes("1984")).map(a => ({ name: a.name, photo: photoOf(a.name) })),
   };
-  // 环上最多 18 张（半径可控，避免溢出压到详情面板），多余按序抽样
+  // 环上最多 14 张（半径可控，避免溢出压到详情面板），多余按序抽样
   function pick(arr) {
     if (arr.length <= 14) return arr;
     const step = arr.length / 14; const out = [];
@@ -100,7 +102,7 @@
       .concat(a.games.map(g => `<span class="tag" style="background:rgba(232,230,227,.06);color:var(--muted);border-color:var(--line)">${g}</span>`));
     document.getElementById("d-tags").innerHTML = tags.join("");
     document.getElementById("d-summary").textContent =
-      ms.length ? `共 ${ms.length} 次夺金时刻，最早可追溯至 ${ms[ms.length-1].year} 年。` : "";
+      ms.length ? `共 ${ms.length} 次夺金时刻，最早可追溯至 ${Math.min(...ms.map(m => +m.year))} 年。` : "";
     document.getElementById("d-medals").innerHTML = ms.map(m => `
       <div class="medal-row">
         <span class="yr">${m.year}</span>
@@ -131,26 +133,7 @@
     build(b.dataset.k);
   });
   build("multi");
-
-  setTimeout(() => {
-    const st = document.getElementById("ring");
-    const tilt = st.querySelector(".rgs-tilt");
-    const cs = getComputedStyle(st);
-    const ct = getComputedStyle(tilt);
-    const cr = getComputedStyle(st.querySelector(".rgs-ring"));
-    const d = document.createElement("div"); d.id = "ring-debug2";
-    d.textContent = "DBG2|" + JSON.stringify({
-      cls: st.className, perspective: cs.perspective, oflow: cs.overflow,
-      tiltTf: ct.transform.slice(0, 60), tiltStyle: ct.transformStyle,
-      ringTf: cr.transform.slice(0, 80), ringStyle: cr.transformStyle,
-      slotCount: st.querySelectorAll(".rgs-slot").length
-    });
-    document.body.appendChild(d);
-  }, 2500);
-
-
-
-})();
+})().catch(() => showLoadError());
 </script>
 </body>
 </html>

@@ -3,7 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0C0C0C">
 <title>体育精神专题 · 体育人物与体育精神</title>
+<script>try{var a=localStorage.getItem("site-accent");if(a&&a!=="red")document.documentElement.dataset.accent=a}catch(e){}</script>
 <link rel="stylesheet" href="css/design.css">
 <style>
   .page { padding-top: calc(var(--nav-h) + 40px); }
@@ -13,16 +15,16 @@
   .theme:nth-child(even) .t-body { order: 2; }
   @media (max-width: 900px) { .theme, .theme:nth-child(even) { grid-template-columns: 1fr; }
     .theme:nth-child(even) .t-body { order: 0; } }
-  .t-no { font-family: var(--mono); color: var(--gold); font-size: 12px; letter-spacing: 3px; margin-bottom: 14px; }
+  .t-no { font-family: var(--font-display); color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 4px; margin-bottom: 14px; }
   .t-body h2 { font-size: clamp(26px, 3.2vw, 40px); font-weight: 800; letter-spacing: -0.5px; }
   .t-body .sub { color: var(--accent); font-size: 15px; margin: 8px 0 18px; font-weight: 600; }
   .t-body p { color: var(--muted); font-size: 14.5px; margin-bottom: 12px; max-width: 62ch; }
   .t-body .note { color: var(--faint); font-size: 12.5px; font-family: var(--mono); margin-top: 10px; }
   .t-side { display: flex; flex-direction: column; gap: 14px; }
   .hero-card { display: flex; align-items: center; gap: 14px; background: var(--surface);
-    border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px;
+    border: 1.5px solid var(--card-line); border-radius: var(--radius); padding: 14px 18px;
     transition: transform 0.3s var(--ease), border-color 0.3s; }
-  .hero-card:hover { transform: translateX(6px); border-color: rgba(230, 62, 49, 0.45); }
+  .hero-card:hover { transform: translateX(6px); border-color: rgba(var(--accent-rgb), 0.45); }
   .hero-card .ph { width: 52px; height: 52px; border-radius: 50%; overflow: hidden; flex: none;
     border: 1px solid var(--line-strong); background: var(--surface-2); }
   .hero-card .ph img { width: 100%; height: 100%; object-fit: cover; }
@@ -30,6 +32,10 @@
   .hero-card .nm { font-weight: 700; }
   .hero-card .ds { font-size: 12.5px; color: var(--muted); }
   .t-side .kw { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  @media (prefers-reduced-motion: no-preference) {
+    .theme-flash { animation: theme-flash 2.4s var(--ease) both; }
+    @keyframes theme-flash { 0% { background: rgba(var(--accent-rgb), 0.12); } 100% { background: transparent; } }
+  }
 </style>
 </head>
 <body>
@@ -72,7 +78,66 @@
       </div>`;
     box.appendChild(el);
   });
-})();
+
+  /* 首段逐字点亮：滚到哪亮到哪（原生版 AnimatedText，尊重 reduced-motion） */
+  if (!reduceMotion.matches) {
+    const lit = [];
+    box.querySelectorAll(".t-body").forEach((body) => {
+      const par = body.querySelector("p");
+      if (!par) return;
+      const text = par.textContent;
+      par.textContent = "";
+      par.setAttribute("aria-label", text);
+      const spans = [...text].map((ch) => {
+        const sp = document.createElement("span");
+        sp.setAttribute("aria-hidden", "true");
+        sp.textContent = ch;
+        sp.style.opacity = "0.2";
+        par.appendChild(sp);
+        return sp;
+      });
+      lit.push({ par, spans, cur: new Array(spans.length).fill(0.2), vis: false });
+    });
+    if (lit.length) {
+      const io = new IntersectionObserver((es) => es.forEach((en) => {
+        const it = lit.find((x) => x.par === en.target);
+        if (it) it.vis = en.isIntersecting;
+      }), { rootMargin: "120px" });
+      lit.forEach((x) => io.observe(x.par));
+      const tick = () => {
+        const vh = innerHeight;
+        for (const it of lit) {
+          if (!it.vis) continue;
+          const r = it.par.getBoundingClientRect();
+          const p = Math.min(1, Math.max(0, (vh * 0.8 - r.top) / (r.height + vh * 0.6)));
+          const n = it.spans.length, reach = p * (n + 8);
+          for (let i = 0; i < n; i++) {
+            const o = 0.2 + 0.8 * Math.min(1, Math.max(0, reach - i));
+            if (Math.abs(o - it.cur[i]) > 0.02) {
+              it.spans[i].style.opacity = o.toFixed(2);
+              it.cur[i] = o;
+            }
+          }
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+  }
+
+  /* 首页封面流深链：spirit.html?hero=人名 → 定位到 TA 所属的主题 */
+  const hero = new URLSearchParams(location.search).get("hero");
+  if (hero) {
+    const target = [...box.children].find((el) =>
+      [...el.querySelectorAll(".hero-card .nm")].some((n) => n.textContent === hero));
+    if (target) {
+      const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+      target.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" });
+      target.classList.add("theme-flash");
+      setTimeout(() => target.classList.remove("theme-flash"), 2600);
+    }
+  }
+})().catch(() => showLoadError());
 </script>
 </body>
 </html>

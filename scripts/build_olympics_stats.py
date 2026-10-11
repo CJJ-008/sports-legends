@@ -53,9 +53,21 @@ REGION_CN = {
 }
 
 
+# 历史代表团按 NOC 优先：原始 noc_regions.csv 把 URS/GDR/EUN 等的 region
+# 写成了现代国名（Russia/Germany），仅靠 region 名会与现代表团重名
+NOC_CN = {
+    "URS": "苏联", "GDR": "民主德国", "FRG": "联邦德国", "EUN": "独联体",
+    "RUS": "俄罗斯", "ROC": "俄罗斯奥委会", "TCH": "捷克斯洛伐克",
+    "YUG": "南斯拉夫", "SCG": "塞尔维亚和黑山", "BOH": "波希米亚",
+    "ANZ": "澳大拉西亚", "IOA": "独立运动员",
+}
+
+
 def cn_region(region: str, noc: str) -> str:
     if noc == "CHN":
         return "中国"
+    if noc in NOC_CN:
+        return NOC_CN[noc]
     return REGION_CN.get(region, REGION_CN.get(noc, region))
 
 
