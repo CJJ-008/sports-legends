@@ -58,8 +58,10 @@ const AXIS = { axisLine: { lineStyle: { color: "rgba(232,230,227,0.18)" } },
 const COLORS = ["#e63e31", "#d9a441", "#5b8dd9", "#59a97a", "#c77dba", "#e0803d"];
 const charts = [];
 function mk(id, option) {
-  const c = echarts.init(document.getElementById(id));
-  c.setOption(option); charts.push(c); return c;
+  const dom = document.getElementById(id);
+  let c = echarts.getInstanceByDom(dom);
+  if (!c) { c = echarts.init(dom); charts.push(c); }
+  c.setOption(option, true); return c;
 }
 window.addEventListener("resize", () => charts.forEach(c => c.resize()));
 
@@ -73,8 +75,23 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
   function renderFifa() {
     const sel = fifa.filter(p => fSel.has(p.name));
     const allYears = [...new Set(sel.flatMap(p => p.seasons.map(s => s.year)))].sort((a, b) => a - b);
+    // 末端评分接近的曲线把名字上下错开；值越高名字越靠上，保持与曲线同序不交叉
+    const dy = sel.map(() => 0);
+    if (sel.length) {
+      const ends = sel.map((p, i) => ({ i, v: p.seasons.reduce((m, s) => s.year > m.year ? s : m).bov }))
+                      .sort((a, b) => a.v - b.v);
+      let k = 0;
+      while (k < ends.length) {
+        let j = k;
+        while (j + 1 < ends.length && ends[j + 1].v - ends[j].v < 1.5) j++;
+        const n = j - k + 1;
+        for (let c = 0; c < n; c++) dy[ends[k + c].i] = ((n - 1) / 2 - c) * 24;
+        k = j + 1;
+      }
+    }
+    const lastYear = allYears.length - 1;
     mk("c-fifa", {
-      grid: { left: 44, right: 24, top: 36, bottom: 30 },
+      grid: { left: 44, right: 104, top: 36, bottom: 30 },
       tooltip: { trigger: "axis" },
       legend: { show: false },
       xAxis: { type: "category", data: allYears.map(y => "FIFA " + String(y).slice(2)), ...AXIS },
@@ -83,7 +100,8 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
         name: p.name, type: "line", smooth: true, symbolSize: 6, connectNulls: true,
         data: allYears.map(y => { const s = p.seasons.find(x => x.year === y); return s ? s.bov : null; }),
         lineStyle: { width: 3, color: COLORS[i % 6] }, itemStyle: { color: COLORS[i % 6] },
-        label: { show: true, position: "top", color: COLORS[i % 6], fontFamily: "monospace", fontSize: 10, formatter: (x) => x.data[1] },
+        label: { show: true, position: "top", color: COLORS[i % 6], fontFamily: "monospace", fontSize: 10, formatter: (x) => x.dataIndex === lastYear ? "" : x.data[1] },
+        endLabel: { show: true, formatter: "{a}", color: COLORS[i % 6], fontSize: 12.5, fontWeight: 700, offset: [6, dy[i]] },
       })),
     });
   }
@@ -105,16 +123,32 @@ window.addEventListener("resize", () => charts.forEach(c => c.resize()));
   const nNames = nba.map(p => p.name);
   function renderNba() {
     const sel = nba.filter(p => nSel.has(p.name));
+    const allYears = [...new Set(sel.flatMap(p => p.seasons.map(s => s.year)))].sort((a, b) => a - b);
+    // 末端场均得分接近的曲线把名字上下错开；值越高名字越靠上，保持与曲线同序不交叉
+    const dy = sel.map(() => 0);
+    if (sel.length) {
+      const ends = sel.map((p, i) => ({ i, v: p.seasons[p.seasons.length - 1].ppg }))
+                      .sort((a, b) => a.v - b.v);
+      let k = 0;
+      while (k < ends.length) {
+        let j = k;
+        while (j + 1 < ends.length && ends[j + 1].v - ends[j].v < 1.5) j++;
+        const n = j - k + 1;
+        for (let c = 0; c < n; c++) dy[ends[k + c].i] = ((n - 1) / 2 - c) * 24;
+        k = j + 1;
+      }
+    }
     mk("c-nba", {
-      grid: { left: 44, right: 24, top: 36, bottom: 30 },
+      grid: { left: 44, right: 110, top: 36, bottom: 30 },
       tooltip: { trigger: "axis" },
       legend: { show: false },
-      xAxis: { type: "category", data: sel[0] ? sel[0].seasons.map(s => s.year + "-" + String((s.year + 1) % 100).padStart(2, "0")) : [], ...AXIS },
+      xAxis: { type: "category", data: allYears.map(y => y + "-" + String((y + 1) % 100).padStart(2, "0")), ...AXIS },
       yAxis: { type: "value", ...AXIS },
       series: sel.map((p, i) => ({
         name: p.name, type: "line", smooth: true, symbolSize: 5, connectNulls: true,
-        data: p.seasons.map(s => s.ppg),
+        data: allYears.map(y => { const s = p.seasons.find(x => x.year === y); return s ? s.ppg : null; }),
         lineStyle: { width: 3, color: COLORS[i % 6] }, itemStyle: { color: COLORS[i % 6] },
+        endLabel: { show: true, formatter: "{a}", color: COLORS[i % 6], fontSize: 12.5, fontWeight: 700, offset: [6, dy[i]] },
       })),
     });
     const st = document.getElementById("nba-stats");
